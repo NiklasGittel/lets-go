@@ -5,14 +5,12 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"os"
+	"strconv"
 	"time"
 
+	"github.com/joho/godotenv"
 	_ "modernc.org/sqlite"
-)
-
-const (
-	dbName     = "local_sales.db"
-	numRecords = 5000
 )
 
 type Product struct {
@@ -39,7 +37,6 @@ var categoriesAndProducts = map[string][]Product{
 var regions = []string{"North America", "Europe", "Asia Pacific"}
 var paymentMethods = []string{"Credit Card", "PayPal", "Debit Card"}
 
-// 1. Function to generate mock data
 func generateMockData(count int) []SaleRecord {
 	var records []SaleRecord
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -50,7 +47,7 @@ func generateMockData(count int) []SaleRecord {
 		categories = append(categories, cat)
 	}
 
-	for i := 0; i < count; i++ {
+	for range count {
 		randomDays := r.Intn(366)
 		saleDate := startDate.AddDate(0, 0, randomDays).Format("2006-01-02 15:04:05")
 
@@ -76,8 +73,7 @@ func generateMockData(count int) []SaleRecord {
 	return records
 }
 
-// 2. Function to setup database and insert data
-func setupDatabase(records []SaleRecord) {
+func setupDatabase(dbName string, records []SaleRecord) {
 	db, err := sql.Open("sqlite", dbName)
 	if err != nil {
 		log.Fatalf("Failed to open database: %v", err)
@@ -106,7 +102,6 @@ func setupDatabase(records []SaleRecord) {
 		log.Fatalf("Failed to clear table: %v", err)
 	}
 
-	// Bulk insert using a transaction
 	tx, err := db.Begin()
 	if err != nil {
 		log.Fatalf("Failed to begin transaction: %v", err)
@@ -143,9 +138,15 @@ func setupDatabase(records []SaleRecord) {
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println("Warning: No .env file found, relying on system environment variables")
+	}
+	dbName := os.Getenv("DB_NAME")
+	numRecords, _ := strconv.Atoi(os.Getenv("RECORD_COUNT"))
 	fmt.Printf("Generating %d records...\n", numRecords)
 	data := generateMockData(numRecords)
 
 	fmt.Println("Saving to database...")
-	setupDatabase(data)
+	setupDatabase(dbName, data)
 }
