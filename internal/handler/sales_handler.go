@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 
+	"letsgo/internal/domain"
 	"letsgo/internal/repository"
 )
 
@@ -39,11 +41,42 @@ func (h *Handler) GetSalesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var response []SaleResponseDTO
+	var response []GetSaleResponseDTO
 	for _, row := range sales {
 		response = append(response, ToDTO(row))
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+func (h *Handler) CreateSaleHandler(w http.ResponseWriter, r *http.Request) {
+	var request PostSaleRequestDTO
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, "Invalid JSON request body.", http.StatusBadRequest)
+		return
+	}
+
+	saleDate, err := time.Parse(time.RFC3339, request.SaleDate)
+	if err != nil {
+		http.Error(w, "Invalid 'sale_date'. Must be an RFC3339 timestamp.", http.StatusBadRequest)
+		return
+	}
+
+	sale := domain.Sale{
+		SaleDate:      saleDate,
+		Category:      request.Category,
+		ProductName:   request.ProductName,
+		Quantity:      request.Quantity,
+		TotalPrice:    request.TotalPrice,
+		CustomerID:    request.CustomerID,
+		Region:        request.Region,
+		PaymentMethod: request.PaymentMethod,
+	}
+	if err := h.Repo.Save(sale); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
 }
