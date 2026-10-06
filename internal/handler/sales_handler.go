@@ -7,15 +7,15 @@ import (
 	"time"
 
 	"letsgo/internal/domain"
-	"letsgo/internal/repository"
+	"letsgo/internal/service"
 )
 
 type Handler struct {
-	Repo repository.SaleRepository
+	Service service.SalesService
 }
 
-func NewHandler(repo repository.SaleRepository) *Handler {
-	return &Handler{Repo: repo}
+func NewHandler(svc service.SalesService) *Handler {
+	return &Handler{Service: svc}
 }
 
 func (h *Handler) GetSalesHandler(w http.ResponseWriter, r *http.Request) {
@@ -35,7 +35,7 @@ func (h *Handler) GetSalesHandler(w http.ResponseWriter, r *http.Request) {
 		limit = parsedLimit
 	}
 
-	sales, err := h.Repo.GetAll(limit)
+	sales, err := h.Service.GetAll(limit)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -73,7 +73,7 @@ func (h *Handler) CreateSaleHandler(w http.ResponseWriter, r *http.Request) {
 		Region:        request.Region,
 		PaymentMethod: request.PaymentMethod,
 	}
-	if err := h.Repo.Save(sale); err != nil {
+	if err := h.Service.Save(sale); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

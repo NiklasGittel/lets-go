@@ -3,16 +3,20 @@ package repository
 import (
 	"database/sql"
 	"errors"
+	"time"
+
 	"letsgo/internal/domain"
 )
 
 type SQLiteRepo struct {
 	db *sql.DB
+	//delay to simulate slow queries
+	delay time.Duration
 }
 
 // Constructor function
-func NewSQLiteRepo(db *sql.DB) SaleRepository {
-	return &SQLiteRepo{db: db}
+func NewSQLiteRepo(db *sql.DB, delay time.Duration) SaleRepository {
+	return &SQLiteRepo{db: db, delay: delay}
 }
 
 func (r *SQLiteRepo) GetByID(id int) (*domain.Sale, error) {
@@ -20,6 +24,7 @@ func (r *SQLiteRepo) GetByID(id int) (*domain.Sale, error) {
 		SELECT transaction_id, sale_date, category, product_name, quantity, total_price, customer_id, region, payment_method 
 		FROM sales WHERE transaction_id = ?
 	`
+	time.Sleep(r.delay)
 	row := r.db.QueryRow(query, id)
 
 	var s domain.Sale
@@ -45,6 +50,8 @@ func (r *SQLiteRepo) GetAll(limit int) ([]domain.Sale, error) {
 
 	var rows *sql.Rows
 	var err error
+
+	time.Sleep(r.delay)
 
 	if limit > 0 {
 		query += " LIMIT ?"
@@ -77,6 +84,7 @@ func (r *SQLiteRepo) Save(s domain.Sale) error {
 		INSERT INTO sales (sale_date, category, product_name, quantity, total_price, customer_id, region, payment_method)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 	`
+	time.Sleep(r.delay)
 	_, err := r.db.Exec(
 		query, s.SaleDate, s.Category, s.ProductName,
 		s.Quantity, s.TotalPrice, s.CustomerID, s.Region, s.PaymentMethod,

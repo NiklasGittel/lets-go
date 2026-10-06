@@ -4,9 +4,11 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
+	"time"
 
 	"letsgo/internal/handler"
 	"letsgo/internal/repository"
+	"letsgo/internal/service"
 
 	_ "modernc.org/sqlite"
 )
@@ -18,8 +20,9 @@ func main() {
 	}
 	defer db.Close()
 
-	saleRepo := repository.NewSQLiteRepo(db)
-	h := handler.NewHandler(saleRepo)
+	saleRepo := repository.NewSQLiteRepo(db, 2*time.Second)
+	saleService := service.NewSalesService(saleRepo, time.Minute)
+	h := handler.NewHandler(saleService)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /sales", h.GetSalesHandler)
