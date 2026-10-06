@@ -50,6 +50,27 @@ func (h *Handler) GetSalesHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+func (h *Handler) GetSaleByIDHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil || id <= 0 {
+		http.Error(w, "Invalid 'id'. Must be a positive integer.", http.StatusBadRequest)
+		return
+	}
+
+	sale, err := h.Service.GetByID(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if sale == nil {
+		http.Error(w, "Sale not found.", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(ToDTO(*sale))
+}
+
 func (h *Handler) CreateSaleHandler(w http.ResponseWriter, r *http.Request) {
 	var request PostSaleRequestDTO
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {

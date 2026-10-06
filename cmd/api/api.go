@@ -26,6 +26,7 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /sales", h.GetSalesHandler)
+	mux.HandleFunc("GET /sales/{id}", h.GetSaleByIDHandler)
 	mux.HandleFunc("POST /sales", h.CreateSaleHandler)
 
 	log.Println("Server starting on http://localhost:8080...")
